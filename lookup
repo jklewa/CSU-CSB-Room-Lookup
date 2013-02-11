@@ -1,0 +1,222 @@
+#!/bin/bash
+
+# This script was (poorly) written by Jason Lewallen and Cameron Tolooee.
+# Its function is to create a chart of the machines in a given room and fill it in with the names of either
+# the machine or the user logged-in to that machine. The goal is to know who is actually sitting at that
+# machine (rather than connected remotely) and (hopefully) that user is given precidence if multiple users
+# are logged in to a given machine.
+#
+# The charts I've created are intended to match the room layouts during the Spring 2012 semester.
+#
+# I don't mind people using this work but if you are going to copy it please give credit where credit is due.
+
+function whoisat
+{
+  if [ "$1" != "" ]; then
+		local olddate="OLD OLD `date --date='8 hours ago' +'%b %d %H:%M'` (:0)"
+		local PERSONS=`(rusers -l $1; echo "$olddate") | egrep -v '\(unknown' | egrep '\(:+[0-9]\)' | sort -k3M -k4 -k5.1,5.2 -k5.4,5.5 -r | awk '{print $1}'`
+		local PERSON=( $PERSONS )	
+		if [ "${PERSON[0]}" != "OLD" ]; then
+			echo "${PERSON[0]}"
+		elif [ "${PERSON[1]}" != "" ]; then
+			echo "OLD"
+		fi
+	else
+		echo " ~$ whoisat - Returns the username of a user at a given machine, if any"
+		echo "       Usage: whoisat <machine-name>[TAB to AutoComplete]"
+	fi
+}
+
+function getname
+{
+	if [ "$1" != "" ]; then
+		local INFO=`finger $1`
+		if [ "$INFO" != "" ]; then
+			local PERSON=( $INFO )
+			local NAME="${PERSON[4]}, ${PERSON[3]}"
+			printf "%20s\n" "$NAME"
+		fi
+	else
+		echo " ~$ getname - Returns the Last, First Name from a given username"
+		echo "       Usage: getname <user-name>"
+	fi
+}
+
+function gna
+{
+	if [ "${OUT:0:1}" == "m" ]; then
+		printf "%20s\n" "$1"
+	else
+		local NAME=`whoisat $1`
+		if [ "$NAME" == "" ]; then
+			echo "xxxxxxxxxxxxxxxxxxxx"
+		elif [ "$NAME" == "OLD" ]; then
+			echo "xxxxxxx(OLD)xxxxxxxx"
+		else
+			if [ "${OUT:0:1}" == "u" ]; then
+				printf "%20s\n" "$NAME"
+			else
+				getname $NAME
+			fi
+		fi
+	fi
+}
+
+function whereami
+{	
+	local HOST=`hostname`
+	local ROOM=`cat ~info/machines | grep $HOST`
+	case $ROOM in
+	*"120"*) ROOM=120 ;;
+	*"215"*) ROOM=215 ;;
+	*"225"*) ROOM=225 ;;
+	*) ROOM="" ;;
+	esac #close case
+	echo $ROOM
+}
+
+
+# set some flags from the arguments (ROOM,OUT):
+# ROOM: 120 | 215 | 225 (default is room script is run from)
+# OUT: name | user | machines
+OUT="names"
+if [ "$1" == "" ]; then
+	ROOM="$(whereami)"
+else
+	ROOM="$1"
+	if [ "$2" != "" ]; then
+		OUT="$2"
+	fi
+fi
+
+if [ "${OUT:0:1}" == "u" ]; then
+	outString="Usernames"
+elif [ "${OUT:0:1}" == "m" ]; then
+	outString="Machine Names"
+else
+	outString="Last, First Names"
+fi
+	
+#check if being run or being sourced
+if [[ "$BASH_SOURCE" == "$0" ]]
+then
+
+	# OUTPUT IF USED DIRECTLY
+	# select the room and display chart:
+	if [ "$ROOM" == "120" ]; then
+		echo "Computer Science Building -- Room 120 -- $outString
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* $(gna asparagus    ) ------ $(gna bean         ) - $(gna chard        ) --------------------------------------------------------------------------------------------------------------------------------- *
+* $(gna arugula      ) ------ $(gna beet         ) - $(gna celery       ) ------ $(gna cilantro     ) - $(gna kale         ) ------ $(gna kelp         ) - $(gna rhubarb      ) ------ $(gna romanesco    ) *
+* $(gna artichoke    ) ------ $(gna bok-choy     ) - $(gna cauliflower  ) ------ $(gna collard      ) - $(gna horseradish  ) ------ $(gna leek         ) - $(gna radish       ) ------ $(gna rutabaga     ) *
+* --------------------------- $(gna broccoli     ) - $(gna carrot       ) ------ $(gna corn         ) - $(gna gourd        ) ------ $(gna lettuce      ) - $(gna pumpkin      ) ------ $(gna shallot      ) *
+* * * * --------------------- $(gna brussels-sprout) - $(gna cantaloupe   ) ------ $(gna cucumber     ) - $(gna garlic       ) ------ $(gna mushroom     ) - $(gna potato       ) ------ $(gna spinach      ) *
+* * * * * * * -------------------------------------- $(gna cabbage      ) ---------------- * * * * * * * * * * * * ---------------- $(gna okra         ) - $(gna pepper       ) ------ $(gna squash       ) *
+  * * * * * * * * * ------------------------------------------------------------ $(gna dillweed     ) - $(gna fennel       ) ------ $(gna onion        ) - $(gna pea          ) ------ $(gna tomatillo    ) *
+D   * * * * * * * * * * *------------------------------------------------------- $(gna eggplant     ) - $(gna endive       ) ------ $(gna parsley      ) - $(gna parsnip      ) ------ $(gna tomato       ) *
+  O   * * * * * * * * * * * * * --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- *
+*   O   * * * * * * * * * * * * * * * ------------------------------------------------------------------- $(gna turnip       ) ----------------------------------------- $(gna wasabi       ) ------------- *
+* *   R   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	Use \"$0 help\" if you need help using the lookup script." | less -cS~
+	elif [ "$ROOM" == "215" ]; then
+		echo "Computer Science Building -- Room 215 -- $outString
+* * * * * * * * * * * *-DOOR-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* $(gna antero       ) ------ $(gna la-plata     ) -- $(gna lincoln      ) ------ $(gna wetterhorn   ) *
+* $(gna bierstadt    ) ---------------------------------------------------------- $(gna uncompahgre  ) *
+* $(gna blanca       ) ------ $(gna harvard      ) -- $(gna longs        ) ------ $(gna torreys      ) *
+* $(gna capitol      ) ------ $(gna grays        ) -- $(gna maroon       ) ------ $(gna tabeguache   ) *
+* $(gna conundrum    ) ------ $(gna evans        ) -- $(gna massive      ) ------ $(gna sneffels     ) *
+* $(gna crestone     ) ------ $(gna el-diente    ) -- $(gna pikes        ) ------ $(gna shavano      ) *
+* --------------------------- $(gna culebra      ) -- $(gna quandary     ) ------ $(gna san-luis     ) *
+* --------------------------------------- $(gna wilson       ) --------------------------------------- *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	Use \"$0 help\" if you need help using the lookup script." | less -cS~
+	elif [ "$ROOM" == "225" ]; then
+		echo "Computer Science Building -- Room 225 -- $outString
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* ----------------------- $(gna kumquats     ) ----------------------------------------------------------------------------------------------------------------------- *
+* --------------------------------------------------- $(gna alexandra    ) - $(gna andromeda    ) - $(gna assiniboine  ) - $(gna brazeau      ) ---------------------- *
+* $(gna bryce         ) - $(gna clemenceau   ) ------ $(gna columbia     ) - $(gna diadem       ) - $(gna edith-cavell ) - $(gna forbes       ) - $(gna fryatt       ) *
+* $(gna goodsir       ) - $(gna hungabee     ) ------ $(gna joffre       ) - $(gna kitchener    ) - $(gna lyell        ) - $(gna lefroy       ) - $(gna north-twin   ) *
+* $(gna snow-dome     ) - $(gna stutfield    ) ------ $(gna temple       ) - $(gna tsar         ) - $(gna tusk         ) - $(gna twins-tower  ) - $(gna victoria     ) *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * ** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	Use \"$0 help\" if you need help using the lookup script." | less -cS~
+
+	# help case:
+	elif [ "$ROOM" == "help" ]; then
+		echo "## # # # # # # # # # # # #
+## CS Room Lookup Script #
+## # # # # # # # # # # # #
+##  Look up who is currently logged-in to the machines of a given room
+##     in the CS Building.
+##
+##  If multiple users are connected, the script will attempt to choose
+##     the user who is most likely the one currently sitting at that
+##     machine.
+##
+## Valid Room IDs #
+### # # # # # # # #
+##           Room -- RoomID
+##   CSB Room 120 --  120 (default is your current room)
+##   CSB Room 215 --  215
+##   CSB Room 225 --  225
+##
+## Valid Output Types #
+### # # # # # # # # # #
+##              Type -- OutputType
+##  Last, First Name -- (n)ames (default)
+##          Username -- (u)sers
+##      Machine Name -- (m)achines
+##
+## Script Usages #
+## # # # # # # # #
+##   ~$ $0 RoomID 
+##   ~$ $0 RoomID OutputType
+##   ~$ $0 RoomID OutputType > FileNameToStoreChart.txt
+##
+## Using the lookup scripts' internal functions #
+### # # # # # # # # # # # # # # # # # # # # # # #
+##   ~$ source $0
+##"
+
+	# invalid case:
+	else
+		echo "Sorry, you entered an invalid room: \"$1\"
+	If you need help, use the help argument: $0 help"
+	fi
+	
+else
+	#OUTPUT WHEN SOURCED:
+	echo "## CS Room Lookup Script (Sourced) ##"
+	echo "# Lookup Script Functions:"
+	whoisat
+	getname
+	echo " ~$ whereami - Returns the machine-name of the machine you are at"
+	echo "       Usage: whereami"
+	
+	echo " ~$ gna - Returns a (formatted) Last, First Name of the user at a given machine, if any (helper function)"
+	echo "       Usage: gna <machine-name>[TAB to AutoComplete]"
+	
+	# Function used for <machine-name> TAB-AutoComplete
+	CSMACHINES=`cat ~info/machines | grep -E '(120-)|(215-)|(225-)' | awk '{printf $1" "}'`
+	_UseGetOpt-2 ()
+	{
+	  local cur
+	  # Pointer to current completion word.
+	  # By convention, it's named "cur" but this isn't strictly necessary.
+	  COMPREPLY=()   # Array variable storing the possible completions.
+	  cur=${COMP_WORDS[COMP_CWORD]}
+	  case "$cur" in
+		*)
+		COMPREPLY=( $( compgen -W "$CSMACHINES" -- $cur ) );;
+	  esac
+
+	  return 0
+	}
+	# Hook in the autocomplete function
+	complete -F _UseGetOpt-2 -o filenames whoisat
+	complete -F _UseGetOpt-2 -o filenames gna
+fi
