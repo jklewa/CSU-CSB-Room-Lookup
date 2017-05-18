@@ -1,9 +1,8 @@
-CSU-CSB-Room-Lookup
-===================
-
- Look up who is currently logged-in to the machines of a given room in the CSU CS Building.
+# CSU-CSB-Room-Lookup
+Look up who is currently logged-in to the machines of a given room in the CSU CS Building.
  
- Help-Text Output:
+## Help-Text Output:
+```
 ## # # # # # # # # # # # #
 ## CS Room Lookup Script #
 ## # # # # # # # # # # # #
@@ -38,8 +37,10 @@ CSU-CSB-Room-Lookup
 ### # # # # # # # # # # # # # # # # # # # # # # #
 ##   ~$ source ~/lookup
 ##
+```
 
- Sourcing Output:
+## Sourcing Output:
+```
 ## CS Room Lookup Script (Sourced) ##
 # Lookup Script Functions:
  ~$ whoisat - Returns the username of a user at a given machine, if any
@@ -50,3 +51,4 @@ CSU-CSB-Room-Lookup
        Usage: whereami
  ~$ gna - Returns a (formatted) Last, First Name of the user at a given machine, if any (helper function)
        Usage: gna <machine-name>[TAB to AutoComplete]
+```
